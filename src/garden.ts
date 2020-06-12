@@ -1,6 +1,7 @@
 interface BasePlot {
   type: 'weed' | 'plant' | 'dirt';
   isDugUp: boolean;
+  sprite?: Phaser.GameObjects.Sprite;
 }
 
 interface WeedPlot extends BasePlot {
@@ -58,6 +59,9 @@ export default class Garden {
     let plants = 0;
     [-1, 0, 1].forEach((dx) => {
       [-1, 0, 1].forEach((dy) => {
+        if (dx === 0 && dy === 0) {
+          return;
+        }
         if (
           this.isValidPlot(x + dx, y + dy) &&
           this.getPlot(x + dx, y + dy).type === 'plant'
@@ -80,5 +84,38 @@ export default class Garden {
   getWeedStrength(x: number, y: number) {
     const plot = this.getPlot(x, y);
     return plot.type === 'weed' ? plot.weedStrength : 0;
+  }
+
+  revealPlot(x: number, y: number) {
+    this.getPlot(x, y).isDugUp = true;
+    switch (this.getPlot(x, y).type) {
+      case 'dirt':
+        this.getPlot(x, y).sprite?.destroy();
+        [-1, 0, 1].forEach((dx) => {
+          [-1, 0, 1].forEach((dy) => {
+            if (dx === 0 && dy === 0) {
+              return;
+            }
+            if (
+              this.isValidPlot(x + dx, y + dy) &&
+              !this.getPlot(x + dx, y + dy).isDugUp &&
+              this.getPlot(x + dx, y + dy).type !== 'plant'
+            ) {
+              setInterval(() => {
+                this.revealPlot(x + dx, y + dy);
+              }, 50);
+            }
+          });
+        });
+        break;
+      case 'plant':
+        this.getPlot(x, y).sprite?.setFrame(3);
+        break;
+      case 'weed':
+        this.getPlot(x, y).sprite?.setFrame(
+          Math.min(this.getWeedStrength(x, y) - 1, 2)
+        );
+        break;
+    }
   }
 }

@@ -6,7 +6,7 @@ export default class PlantGame extends Phaser.Scene {
 
   constructor() {
     super('plantgame');
-    this.garden = new Garden(14, 14, 8);
+    this.garden = new Garden(14, 14, 16);
   }
 
   preload() {
@@ -43,27 +43,22 @@ export default class PlantGame extends Phaser.Scene {
   }
 
   private tileSelect(pointer: Phaser.Input.Pointer) {
-    console.log(pointer);
+    const plotX = Math.floor(pointer.x / 32) - 1;
+    const plotY = Math.floor(pointer.y / 32) - 1;
+    this.garden.revealPlot(plotX, plotY);
   }
 
   create() {
     this.createBackground();
     for (let y = 0; y < 14; y += 1) {
       for (let x = 0; x < 14; x += 1) {
-        switch (this.garden.getPlot(x, y).type) {
-          case 'plant':
-            this.add.sprite(32 + 16 + 32 * x, 32 + 16 + 32 * y, 'plants', 3);
-            break;
-          case 'weed':
-            this.add.sprite(
-              32 + 16 + 32 * x,
-              32 + 16 + 32 * y,
-              'plants',
-              Math.min(this.garden.getWeedStrength(x, y) - 1, 2)
-            );
-
-            break;
-        }
+        const sprite = this.add.sprite(
+          32 + 16 + 32 * x,
+          32 + 16 + 32 * y,
+          'plants',
+          6
+        );
+        this.garden.getPlot(x, y).sprite = sprite;
       }
     }
     this.input.on('pointerdown', this.tileSelect, this);
