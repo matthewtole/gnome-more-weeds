@@ -1,0 +1,41 @@
+{
+  "name": "plant-game.tole.family",
+  "version": "1.0.0",
+  "description": "A game about plants, built by the Tole Family",
+  "main": "src/game.ts",
+  "scripts": {
+    "dev": "rollup --config rollup.config.dev.js",
+    "build": "rollup --config rollup.config.dist.js",
+    "watch": "rollup --watch --config rollup.config.dev.js",
+    "prettier:fix": "prettier --write \"src/**/*.{js,ts}\"",
+    "prettier": "prettier --check \"src/**/*.{js,ts}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matthewtole/plant-game.tole.family.git"
+  },
+  "author": "Matthew Tole <matthewtole@gmail.com> (https://matthewtole.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/matthewtole/plant-game.tole.family/issues"
+  },
+  "homepage": "https://github.com/matthewtole/plant-game.tole.family#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@rollup/plugin-replace": "^2.3.0",
+    "phaser": "^3.22.0",
+    "prettier": "^2.0.5",
+    "rollup": "^1.29.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-typescript2": "^0.25.3",
+    "rollup-plugin-uglify": "^6.0.4",
+    "typescript": "^3.7.4"
+  },
+  "keywords": [
+    "game",
+    "web",
+    "plants"
+  ]
+}
