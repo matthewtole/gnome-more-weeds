@@ -19,4 +19,7 @@ export const enum PLANT_TILES {
   TAG = 13,
   DIRT_1 = 14,
   DIRT_2 = 15,
+  TOOL_DIG = 16,
+  ROCK_2 = 17,
+  TOOL_RAKE = 18,
 }
