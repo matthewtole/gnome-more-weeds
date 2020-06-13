@@ -22,4 +22,31 @@ export const enum PLANT_TILES {
   TOOL_DIG = 16,
   ROCK_2 = 17,
   TOOL_RAKE = 18,
+  _1 = 19,
+  _2 = 20,
+  _3 = 21,
+  HOUSE_1 = 23,
+  HOUSE_2 = 24,
+  HOUSE_3 = 22,
+  HOUSE_4 = 25,
+  TOOL_MARK = 26,
 }
+
+export type Mode = 'dig' | 'rake' | 'mark';
+
+export const ASSET_TAGS = {
+  TILES: {
+    BACKGROUND: 'tiles/background',
+    PLANTS: 'tiles/plants',
+  },
+  SPRITESHEETS: {
+    WEED_1: 'spritesheets/weed1',
+    WEED_2: 'spritesheets/weed2',
+    WEED_3: 'spritesheets/weed3',
+  },
+  ANIMATIONS: {
+    WEED_1: 'animations/weed/1',
+    WEED_2: 'animations/weed/2',
+    WEED_3: 'animations/weed/3',
+  },
+};

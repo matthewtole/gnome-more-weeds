@@ -1,9 +1,9 @@
-import { PLANT_TILES } from './types';
+import { PLANT_TILES, ASSET_TAGS, TILE_SIZE } from './types';
 
 type PlantColor = 'orange' | 'purple' | 'blue';
 
 interface BasePlot {
-  type: 'weed' | 'plant' | 'dirt' | 'edge';
+  type: 'weed' | 'plant' | 'dirt' | 'edge' | 'house';
   isRevealed?: boolean;
   isDugUp?: boolean;
   sprite?: Phaser.GameObjects.Sprite;
@@ -27,13 +27,18 @@ interface DirtPlot extends BasePlot {
   hasMound?: boolean;
 }
 
+interface HousePlot extends BasePlot {
+  type: 'house';
+  houseSegment: number;
+}
+
 interface EdgePlot extends BasePlot {
   type: 'edge';
   isRevealed: true;
   isDugUp: true;
 }
 
-export type Plot = WeedPlot | PlantPlot | DirtPlot | EdgePlot;
+export type Plot = WeedPlot | PlantPlot | DirtPlot | EdgePlot | HousePlot;
 
 export default class Garden {
   private grid: Plot[][];
@@ -53,14 +58,38 @@ export default class Garden {
       this.grid.push(row);
     }
 
+    const houseX = Math.floor(1 + Math.random() * (width - 3));
+    const houseY = Math.floor(1 + Math.random() * (height - 3));
+    this.grid[houseY][houseX] = {
+      type: 'house',
+      houseSegment: PLANT_TILES.HOUSE_1,
+    };
+    this.grid[houseY][houseX + 1] = {
+      type: 'house',
+      houseSegment: PLANT_TILES.HOUSE_2,
+    };
+    this.grid[houseY + 1][houseX] = {
+      type: 'house',
+      houseSegment: PLANT_TILES.HOUSE_3,
+    };
+    this.grid[houseY + 1][houseX + 1] = {
+      type: 'house',
+      houseSegment: PLANT_TILES.HOUSE_4,
+    };
+
     // Randomly place `numPlants` plants in the garden
     for (let p = 0; p < numPlants; p += 1) {
-      const x = Math.floor(1 + Math.random() * (width - 2));
-      const y = Math.floor(1 + Math.random() * (height - 2));
-      this.grid[y][x] = {
-        type: 'plant',
-        plantColor: randomPlantColor(),
-      };
+      while (true) {
+        const x = Math.floor(1 + Math.random() * (width - 2));
+        const y = Math.floor(1 + Math.random() * (height - 2));
+        if (this.getPlot(x, y).type === 'dirt') {
+          this.grid[y][x] = {
+            type: 'plant',
+            plantColor: randomPlantColor(),
+          };
+          break;
+        }
+      }
     }
 
     // Grow the weeds around the plants based on the number of adjacent plants
@@ -68,7 +97,8 @@ export default class Garden {
       for (let x = 0; x < width; x += 1) {
         if (
           this.grid[y][x].type === 'plant' ||
-          this.grid[y][x].type === 'edge'
+          this.grid[y][x].type === 'edge' ||
+          this.grid[y][x].type === 'house'
         ) {
           continue;
         }
@@ -158,30 +188,46 @@ export default class Garden {
     if (plot.isDugUp) {
       return;
     }
-    plot.isDugUp = true;
     switch (plot.type) {
       case 'weed':
-        plot.sprite?.destroy();
-        this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
-          if (neighbor.type !== 'plant') {
-            return;
-          }
-          let allWeedsDugUp = true;
-          this.forEachNeighborPlot(nx, ny, (plantNeighbor) => {
-            if (
-              allWeedsDugUp &&
-              plantNeighbor.type === 'weed' &&
-              !plantNeighbor.isDugUp
-            ) {
-              allWeedsDugUp = false;
+        plot.weedStrength -= 1;
+        if (plot.weedStrength <= 0) {
+          plot.isDugUp = true;
+          plot.sprite?.destroy();
+          this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
+            if (neighbor.type !== 'plant') {
+              return;
+            }
+            let allWeedsDugUp = true;
+            this.forEachNeighborPlot(nx, ny, (plantNeighbor) => {
+              if (
+                allWeedsDugUp &&
+                plantNeighbor.type === 'weed' &&
+                !plantNeighbor.isDugUp
+              ) {
+                allWeedsDugUp = false;
+              }
+            });
+            if (allWeedsDugUp) {
+              this.revealPlot(nx, ny);
             }
           });
-          if (allWeedsDugUp) {
-            this.revealPlot(nx, ny);
+        } else {
+          switch (plot.weedStrength) {
+            case 1:
+              plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_1);
+              break;
+            case 2:
+              plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_2);
+              break;
+            default:
+              plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_3);
           }
-        });
+          break;
+        }
         break;
       case 'plant':
+        plot.isDugUp = true;
         plot.sprite?.destroy();
         break;
     }
@@ -197,6 +243,9 @@ export default class Garden {
     }
     plot.isRevealed = true;
     switch (plot.type) {
+      case 'house':
+        plot.sprite?.setFrame(plot.houseSegment);
+        break;
       case 'dirt':
         this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
           if (!neighbor.isRevealed && neighbor.type !== 'plant') {
@@ -228,9 +277,16 @@ export default class Garden {
         plot.sprite?.setFrame(plantColorToFrame(plot.plantColor));
         break;
       case 'weed':
-        this.getPlot(x, y).sprite?.setFrame(
-          Math.min(this.getWeedStrength(x, y) - 1, 2)
-        );
+        switch (this.getWeedStrength(x, y)) {
+          case 1:
+            plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_1);
+            break;
+          case 2:
+            plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_2);
+            break;
+          default:
+            plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_3);
+        }
         break;
     }
     this.updateLeafEdges();

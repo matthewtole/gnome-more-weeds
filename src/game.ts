@@ -1,12 +1,17 @@
 import 'phaser';
 import Garden from './garden';
-import { PLANT_TILES, TILE_SIZE, GARDEN_WIDTH, GARDEN_HEIGHT } from './types';
+import {
+  PLANT_TILES,
+  TILE_SIZE,
+  GARDEN_WIDTH,
+  GARDEN_HEIGHT,
+  Mode,
+  ASSET_TAGS,
+} from './types';
 
 function plotPos(p: number) {
   return TILE_SIZE / 2 + p * TILE_SIZE;
 }
-
-type Mode = 'dig' | 'rake' | 'mark';
 
 export default class PlantGame extends Phaser.Scene {
   private garden: Garden;
@@ -19,14 +24,38 @@ export default class PlantGame extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet('tiles', 'assets/tiles32.png', {
+    this.load.spritesheet(ASSET_TAGS.TILES.BACKGROUND, 'assets/tiles32.png', {
       frameWidth: TILE_SIZE,
       frameHeight: TILE_SIZE,
     });
-    this.load.spritesheet('plants', 'assets/plants32.png', {
+    this.load.spritesheet(ASSET_TAGS.TILES.PLANTS, 'assets/plants32.png', {
       frameWidth: TILE_SIZE,
       frameHeight: TILE_SIZE,
     });
+    this.load.spritesheet(
+      ASSET_TAGS.SPRITESHEETS.WEED_1,
+      'assets/spritesheet-weed1.png',
+      {
+        frameWidth: TILE_SIZE,
+        frameHeight: TILE_SIZE,
+      }
+    );
+    this.load.spritesheet(
+      ASSET_TAGS.SPRITESHEETS.WEED_2,
+      'assets/spritesheet-weed2.png',
+      {
+        frameWidth: TILE_SIZE,
+        frameHeight: TILE_SIZE,
+      }
+    );
+    this.load.spritesheet(
+      ASSET_TAGS.SPRITESHEETS.WEED_3,
+      'assets/spritesheet-weed3.png',
+      {
+        frameWidth: TILE_SIZE,
+        frameHeight: TILE_SIZE,
+      }
+    );
   }
 
   private createBackground() {
@@ -35,7 +64,7 @@ export default class PlantGame extends Phaser.Scene {
       this.add.sprite(
         plotPos(t),
         plotPos(0),
-        'tiles',
+        ASSET_TAGS.TILES.BACKGROUND,
         t === 0 ? 89 : t === GARDEN_WIDTH - 1 ? 91 : 90
       );
 
@@ -43,17 +72,22 @@ export default class PlantGame extends Phaser.Scene {
       this.add.sprite(
         plotPos(t),
         plotPos(GARDEN_HEIGHT - 1),
-        'tiles',
+        ASSET_TAGS.TILES.BACKGROUND,
         t === 0 ? 135 : t === GARDEN_WIDTH - 1 ? 137 : 136
       );
     }
 
     for (let t = 1; t < GARDEN_HEIGHT - 1; t += 1) {
       // LEFT EDGE
-      this.add.sprite(plotPos(0), plotPos(t), 'tiles', 112);
+      this.add.sprite(plotPos(0), plotPos(t), ASSET_TAGS.TILES.BACKGROUND, 112);
 
       // RIGHT EDGE
-      this.add.sprite(plotPos(GARDEN_WIDTH - 1), plotPos(t), 'tiles', 114);
+      this.add.sprite(
+        plotPos(GARDEN_WIDTH - 1),
+        plotPos(t),
+        ASSET_TAGS.TILES.BACKGROUND,
+        114
+      );
     }
   }
 
@@ -63,25 +97,25 @@ export default class PlantGame extends Phaser.Scene {
         this.add.sprite(
           plotPos(x),
           plotPos(y),
-          'plants',
+          ASSET_TAGS.TILES.PLANTS,
           PLANT_TILES.LEAF_EDGE_DOWN
         ),
         this.add.sprite(
           plotPos(x),
           plotPos(y),
-          'plants',
+          ASSET_TAGS.TILES.PLANTS,
           PLANT_TILES.LEAF_EDGE_LEFT
         ),
         this.add.sprite(
           plotPos(x),
           plotPos(y),
-          'plants',
+          ASSET_TAGS.TILES.PLANTS,
           PLANT_TILES.LEAF_EDGE_RIGHT
         ),
         this.add.sprite(
           plotPos(x),
           plotPos(y),
-          'plants',
+          ASSET_TAGS.TILES.PLANTS,
           PLANT_TILES.LEAF_EDGE_UP
         ),
       ];
@@ -90,7 +124,7 @@ export default class PlantGame extends Phaser.Scene {
         plot.sprite = this.add.sprite(
           plotPos(x),
           plotPos(y),
-          'plants',
+          ASSET_TAGS.TILES.PLANTS,
           PLANT_TILES.LEAVES
         );
         plot.sprite?.setInteractive();
@@ -101,7 +135,7 @@ export default class PlantGame extends Phaser.Scene {
       plot.marker = this.add.sprite(
         plotPos(x),
         plotPos(y),
-        'plants',
+        ASSET_TAGS.TILES.PLANTS,
         PLANT_TILES.TAG
       );
       plot.marker?.setVisible(false);
@@ -140,59 +174,76 @@ export default class PlantGame extends Phaser.Scene {
     }
   }
 
+  private createAnimations() {
+    this.anims.create({
+      key: ASSET_TAGS.ANIMATIONS.WEED_1,
+      frames: this.anims.generateFrameNumbers(
+        ASSET_TAGS.SPRITESHEETS.WEED_1,
+        {}
+      ),
+      frameRate: 2,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: ASSET_TAGS.ANIMATIONS.WEED_2,
+      frames: this.anims.generateFrameNumbers(
+        ASSET_TAGS.SPRITESHEETS.WEED_2,
+        {}
+      ),
+      frameRate: 2,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: ASSET_TAGS.ANIMATIONS.WEED_3,
+      frames: this.anims.generateFrameNumbers(ASSET_TAGS.SPRITESHEETS.WEED_3, {
+        end: 5,
+      }),
+      frameRate: 2,
+      repeat: -1,
+    });
+  }
+
+  createToolbarButton(mode: Mode, position: number, frame: number) {
+    const button = this.add.sprite(
+      16 + 8 + 48 * position,
+      TILE_SIZE * GARDEN_HEIGHT + 16 + 8,
+      ASSET_TAGS.TILES.PLANTS,
+      frame
+    );
+    button
+      .setInteractive()
+      .setData('type', 'button')
+      .setData('onclick', (pointer: Phaser.Input.Pointer) => {
+        this.toolButtons[this.mode].setAlpha(0.5);
+        this.mode = mode;
+        this.toolButtons[this.mode].setAlpha(1);
+      })
+      .setAlpha(0.5);
+    this.toolButtons[mode] = button;
+  }
+
+  createToolbar() {
+    this.add.rectangle(
+      0,
+      TILE_SIZE * GARDEN_HEIGHT + 32,
+      TILE_SIZE * GARDEN_WIDTH * 2,
+      64,
+      0x489551
+    );
+
+    this.createToolbarButton('dig', 0, PLANT_TILES.TOOL_DIG);
+    this.createToolbarButton('rake', 1, PLANT_TILES.TOOL_RAKE);
+    this.createToolbarButton('mark', 2, PLANT_TILES.TOOL_MARK);
+    this.toolButtons[this.mode].setAlpha(1);
+  }
+
   create() {
+    this.createAnimations();
     this.createBackground();
     this.createGarden();
-
-    this.toolButtons.dig = this.add.sprite(
-      16 + 8,
-      TILE_SIZE * GARDEN_HEIGHT + 16 + 8,
-      'plants',
-      PLANT_TILES.TOOL_DIG
-    );
-    this.toolButtons.dig
-      .setInteractive()
-      .setData('type', 'button')
-      .setData('onclick', (pointer: Phaser.Input.Pointer) => {
-        this.toolButtons[this.mode].setAlpha(0.5);
-        this.mode = 'dig';
-        this.toolButtons[this.mode].setAlpha(1);
-      })
-      .setAlpha(0.5);
-
-    this.toolButtons.rake = this.add.sprite(
-      16 + 8 + 32,
-      TILE_SIZE * GARDEN_HEIGHT + 16 + 8,
-      'plants',
-      PLANT_TILES.TOOL_RAKE
-    );
-    this.toolButtons.rake
-      .setInteractive()
-      .setData('type', 'button')
-      .setData('onclick', (pointer: Phaser.Input.Pointer) => {
-        this.toolButtons[this.mode].setAlpha(0.5);
-        this.mode = 'rake';
-        this.toolButtons[this.mode].setAlpha(1);
-      })
-      .setAlpha(0.5);
-
-    this.toolButtons.mark = this.add.sprite(
-      16 + 8 + 64,
-      TILE_SIZE * GARDEN_HEIGHT + 16 + 8,
-      'plants',
-      PLANT_TILES.TAG
-    );
-    this.toolButtons.mark
-      .setInteractive()
-      .setData('type', 'button')
-      .setData('onclick', (pointer: Phaser.Input.Pointer) => {
-        this.toolButtons[this.mode].setAlpha(0.5);
-        this.mode = 'mark';
-        this.toolButtons[this.mode].setAlpha(1);
-      })
-      .setAlpha(0.5);
-
-    this.toolButtons[this.mode].setAlpha(1);
+    this.createToolbar();
 
     this.input.on('gameobjectdown', this.tileSelect, this);
   }
