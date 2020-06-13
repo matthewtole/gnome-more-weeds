@@ -1,75 +1,117 @@
 import 'phaser';
 import Garden from './garden';
+import { PLANT_TILES, TILE_SIZE, GARDEN_WIDTH, GARDEN_HEIGHT } from './types';
+
+function plotPos(p: number) {
+  return TILE_SIZE / 2 + p * TILE_SIZE;
+}
 
 export default class PlantGame extends Phaser.Scene {
   private garden: Garden;
 
   constructor() {
     super('plantgame');
-    this.garden = new Garden(14, 14, 16);
+    this.garden = new Garden(GARDEN_WIDTH, GARDEN_HEIGHT, 16);
   }
 
   preload() {
     this.load.spritesheet('tiles', 'assets/tiles32.png', {
-      frameWidth: 32,
-      frameHeight: 32,
+      frameWidth: TILE_SIZE,
+      frameHeight: TILE_SIZE,
     });
     this.load.spritesheet('plants', 'assets/plants32.png', {
-      frameWidth: 32,
-      frameHeight: 32,
+      frameWidth: TILE_SIZE,
+      frameHeight: TILE_SIZE,
     });
   }
 
   private createBackground() {
-    this.add.sprite(16, 16, 'tiles', 89);
-    for (let t = 1; t < 15; t += 1) {
-      this.add.sprite(16 + 32 * t, 16, 'tiles', 90);
-    }
-    this.add.sprite(512 - 16, 16, 'tiles', 91);
+    for (let t = 0; t < GARDEN_WIDTH; t += 1) {
+      // TOP EDGE
+      this.add.sprite(
+        plotPos(t),
+        plotPos(0),
+        'tiles',
+        t === 0 ? 89 : t === GARDEN_WIDTH - 1 ? 91 : 90
+      );
 
-    this.add.sprite(16, 512 - 16, 'tiles', 135);
-    for (let t = 1; t < 15; t += 1) {
-      this.add.sprite(16 + 32 * t, 512 - 16, 'tiles', 136);
+      // BOTTOM EDGE
+      this.add.sprite(
+        plotPos(t),
+        plotPos(GARDEN_HEIGHT - 1),
+        'tiles',
+        t === 0 ? 135 : t === GARDEN_WIDTH - 1 ? 137 : 136
+      );
     }
-    this.add.sprite(512 - 16, 512 - 16, 'tiles', 137);
 
-    for (let t = 1; t < 15; t += 1) {
-      this.add.sprite(16, 16 + 32 * t, 'tiles', 112);
-    }
+    for (let t = 1; t < GARDEN_HEIGHT - 1; t += 1) {
+      // LEFT EDGE
+      this.add.sprite(plotPos(0), plotPos(t), 'tiles', 112);
 
-    for (let t = 1; t < 15; t += 1) {
-      this.add.sprite(512 - 16, 16 + 32 * t, 'tiles', 114);
+      // RIGHT EDGE
+      this.add.sprite(plotPos(GARDEN_WIDTH - 1), plotPos(t), 'tiles', 114);
     }
   }
 
-  private tileSelect(pointer: Phaser.Input.Pointer) {
-    const plotX = Math.floor(pointer.x / 32) - 1;
-    const plotY = Math.floor(pointer.y / 32) - 1;
-    this.garden.revealPlot(plotX, plotY);
+  private tileSelect(
+    pointer: Phaser.Input.Pointer,
+    gameObject: Phaser.GameObjects.GameObject
+  ) {
+    const pos = gameObject.getData('pos') as { x: number; y: number };
+    this.garden.revealPlot(pos.x, pos.y);
   }
 
   create() {
     this.createBackground();
-    for (let y = 0; y < 14; y += 1) {
-      for (let x = 0; x < 14; x += 1) {
-        const sprite = this.add.sprite(
-          32 + 16 + 32 * x,
-          32 + 16 + 32 * y,
+    this.garden.forEachPlot((x, y, plot) => {
+      plot.leafEdges = [
+        this.add.sprite(
+          plotPos(x),
+          plotPos(y),
           'plants',
-          6
+          PLANT_TILES.LEAF_EDGE_DOWN
+        ),
+        this.add.sprite(
+          plotPos(x),
+          plotPos(y),
+          'plants',
+          PLANT_TILES.LEAF_EDGE_LEFT
+        ),
+        this.add.sprite(
+          plotPos(x),
+          plotPos(y),
+          'plants',
+          PLANT_TILES.LEAF_EDGE_RIGHT
+        ),
+        this.add.sprite(
+          plotPos(x),
+          plotPos(y),
+          'plants',
+          PLANT_TILES.LEAF_EDGE_UP
+        ),
+      ];
+
+      if (plot.type !== 'edge') {
+        plot.sprite = this.add.sprite(
+          plotPos(x),
+          plotPos(y),
+          'plants',
+          PLANT_TILES.LEAVES
         );
-        this.garden.getPlot(x, y).sprite = sprite;
+        plot.sprite?.setInteractive();
+        plot.sprite?.setData('pos', { x, y });
       }
-    }
-    this.input.on('pointerdown', this.tileSelect, this);
+    });
+    this.garden.updateLeafEdges();
+    this.input.on('gameobjectdown', this.tileSelect, this);
   }
 }
 
 const config = {
   type: Phaser.AUTO,
   backgroundColor: '#b06758',
-  width: 512,
-  height: 512,
+  width: TILE_SIZE * GARDEN_WIDTH,
+  height: TILE_SIZE * GARDEN_HEIGHT,
   scene: PlantGame,
 };
 
