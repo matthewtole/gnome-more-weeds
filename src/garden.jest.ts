@@ -6,7 +6,7 @@ describe('Garden', () => {
       [0, 0],
       [1, 1],
     ])('should return true for valid plot location (%p, %p)', (x, y) => {
-      const garden = new Garden(2, 2, 1);
+      const garden = new Garden(Garden.generateLayout(2, 2, 1));
       expect(garden.isValidPlot(x, y)).toBeTruthy();
     });
 
@@ -16,7 +16,7 @@ describe('Garden', () => {
       [2, 0],
       [0, 2],
     ])('should return false for invalid plot location (%p, %p)', (x, y) => {
-      const garden = new Garden(2, 2, 1);
+      const garden = new Garden(Garden.generateLayout(2, 2, 1));
       expect(garden.isValidPlot(x, y)).toBeFalsy();
     });
   });

@@ -5,8 +5,8 @@ import {
   TILE_SIZE,
   GARDEN_WIDTH,
   GARDEN_HEIGHT,
-  Mode,
   ASSET_TAGS,
+  Mode,
 } from './types';
 
 function plotPos(p: number) {
@@ -20,7 +20,9 @@ export default class PlantGame extends Phaser.Scene {
 
   constructor() {
     super('plantgame');
-    this.garden = new Garden(GARDEN_WIDTH, GARDEN_HEIGHT, 16);
+    this.garden = new Garden(
+      Garden.generateLayout(GARDEN_WIDTH, GARDEN_HEIGHT, 16)
+    );
   }
 
   private loadSpritesheet(tag: string, filename: string) {
@@ -141,7 +143,7 @@ export default class PlantGame extends Phaser.Scene {
       case 'button':
         gameObject.getData('onclick')(pointer);
         break;
-      case 'plot':
+      case 'plot': {
         const pos = gameObject.getData('pos') as { x: number; y: number };
         if (!pos) {
           return;
@@ -161,6 +163,7 @@ export default class PlantGame extends Phaser.Scene {
         }
 
         break;
+      }
     }
   }
 
@@ -205,7 +208,7 @@ export default class PlantGame extends Phaser.Scene {
     button
       .setInteractive({ useHandCursor: true })
       .setData('type', 'button')
-      .setData('onclick', (pointer: Phaser.Input.Pointer) => {
+      .setData('onclick', () => {
         this.toolButtons[this.mode].setAlpha(0.5);
         this.mode = mode;
         this.toolButtons[this.mode].setAlpha(1);
@@ -214,7 +217,7 @@ export default class PlantGame extends Phaser.Scene {
     this.toolButtons[mode] = button;
   }
 
-  private onGnomeClick = (pointer: Phaser.Input.Pointer) => {
+  private onGnomeClick = () => {
     const text1 = this.add.text(50, 100, 'Hello, my name is Norman!', {
       font: '16px Coming Soon',
       fill: '#000',
@@ -291,4 +294,4 @@ const config = {
   scene: PlantGame,
 };
 
-const game = new Phaser.Game(config);
+new Phaser.Game(config);

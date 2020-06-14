@@ -1,9 +1,10 @@
-import { PLANT_TILES, ASSET_TAGS, TILE_SIZE } from './types';
+import { PLANT_TILES, ASSET_TAGS } from './types';
 
 type PlantColor = 'orange' | 'purple' | 'blue';
+type PlotType = 'weed' | 'plant' | 'dirt' | 'edge' | 'house';
 
 interface BasePlot {
-  type: 'weed' | 'plant' | 'dirt' | 'edge' | 'house';
+  type: PlotType;
   isRevealed?: boolean;
   isDugUp?: boolean;
   sprite?: Phaser.GameObjects.Sprite;
@@ -38,79 +39,97 @@ interface EdgePlot extends BasePlot {
   isDugUp: true;
 }
 
+interface GardenLayout {
+  width: number;
+  height: number;
+  plots: PlotType[][];
+}
+
 export type Plot = WeedPlot | PlantPlot | DirtPlot | EdgePlot | HousePlot;
 
 export default class Garden {
   private grid: Plot[][];
 
-  constructor(width: number, height: number, numPlants: number) {
-    // Construct the base garden of edges and dirt
-    this.grid = [];
+  static generateLayout(
+    width: number,
+    height: number,
+    numPlants: number
+  ): GardenLayout {
+    const layout: GardenLayout = { width, height, plots: [] };
+
+    // Construct the base layout of dirt and edges
     for (let y = 0; y < height; y += 1) {
-      const row: Plot[] = [];
+      const row: PlotType[] = [];
       for (let x = 0; x < width; x += 1) {
         if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
-          row.push({ type: 'edge', isRevealed: true, isDugUp: true });
+          row.push('edge');
         } else {
-          row.push({ type: 'dirt' });
+          row.push('dirt');
         }
       }
-      this.grid.push(row);
+      layout.plots.push(row);
     }
 
-    const houseX = Math.floor(1 + Math.random() * (width - 3));
-    const houseY = Math.floor(1 + Math.random() * (height - 3));
-    this.grid[houseY][houseX] = {
-      type: 'house',
-      houseSegment: PLANT_TILES.HOUSE_1,
-    };
-    this.grid[houseY][houseX + 1] = {
-      type: 'house',
-      houseSegment: PLANT_TILES.HOUSE_2,
-    };
-    this.grid[houseY + 1][houseX] = {
-      type: 'house',
-      houseSegment: PLANT_TILES.HOUSE_3,
-    };
-    this.grid[houseY + 1][houseX + 1] = {
-      type: 'house',
-      houseSegment: PLANT_TILES.HOUSE_4,
-    };
+    // Place the house somewhere near the middle of the garden
+    const houseX = Math.floor(width / 2) - 1;
+    const houseY = Math.floor(height / 2) - 1;
+    layout.plots[houseY][houseX] = 'house';
+    layout.plots[houseY][houseX + 1] = 'house';
+    layout.plots[houseY + 1][houseX] = 'house';
+    layout.plots[houseY + 1][houseX + 1] = 'house';
 
-    // Randomly place `numPlants` plants in the garden
-    for (let p = 0; p < numPlants; p += 1) {
-      while (true) {
-        const x = Math.floor(1 + Math.random() * (width - 2));
-        const y = Math.floor(1 + Math.random() * (height - 2));
-        if (this.getPlot(x, y).type === 'dirt') {
-          this.grid[y][x] = {
-            type: 'plant',
-            plantColor: randomPlantColor(),
-          };
-          break;
-        }
+    // Grow some plants
+    let plantsToPlace = numPlants;
+    while (plantsToPlace > 0) {
+      const x = Math.floor(1 + Math.random() * (width - 2));
+      const y = Math.floor(1 + Math.random() * (height - 2));
+      if (layout.plots[y][x] === 'dirt') {
+        layout.plots[y][x] = 'plant';
+        plantsToPlace -= 1;
       }
     }
 
-    // Grow the weeds around the plants based on the number of adjacent plants
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
-        if (
-          this.grid[y][x].type === 'plant' ||
-          this.grid[y][x].type === 'edge' ||
-          this.grid[y][x].type === 'house'
-        ) {
-          continue;
-        }
-        const plantNeighbors = this.countPlantNeighbors(x, y);
-        if (plantNeighbors > 0) {
-          this.grid[y][x] = {
-            type: 'weed',
-            weedStrength: plantNeighbors,
-          };
+        if (layout.plots[y][x] === 'dirt') {
+          Garden.forEachNeighbor(x, y, (nx, ny) => {
+            if (layout.plots[ny][nx] === 'plant') {
+              layout.plots[y][x] = 'weed';
+            }
+          });
         }
       }
     }
+
+    return layout;
+  }
+
+  constructor(layout: GardenLayout) {
+    const houseSegments = [
+      PLANT_TILES.HOUSE_2,
+      PLANT_TILES.HOUSE_3,
+      PLANT_TILES.HOUSE_1,
+      PLANT_TILES.HOUSE_4,
+    ];
+    this.grid = layout.plots.map((row, y) =>
+      row.map((type, x) => {
+        switch (type) {
+          case 'dirt':
+            return { type };
+          case 'weed':
+            return {
+              type,
+              weedStrength: Garden.countPlantNeighbors(x, y, layout.plots),
+            };
+          case 'edge':
+            return { type, isRevealed: true, isDugUp: true };
+          case 'house':
+            return { type, houseSegment: houseSegments.shift()! };
+          case 'plant':
+            return { type, plantColor: Garden.randomPlantColor() };
+        }
+      })
+    );
   }
 
   private forEachNeighborPlot(
@@ -118,7 +137,7 @@ export default class Garden {
     y: number,
     callback: (plot: Plot, nx: number, ny: number) => void
   ) {
-    forEachNeighbor(x, y, (nx, ny) => {
+    Garden.forEachNeighbor(x, y, (nx, ny) => {
       if (this.isValidPlot(nx, ny)) {
         callback(this.getPlot(nx, ny), nx, ny);
       }
@@ -143,10 +162,14 @@ export default class Garden {
     });
   }
 
-  countPlantNeighbors(x: number, y: number): number {
+  static countPlantNeighbors(
+    x: number,
+    y: number,
+    plots: PlotType[][]
+  ): number {
     let plants = 0;
-    this.forEachNeighborPlot(x, y, (neighbor) => {
-      if (neighbor.type === 'plant') {
+    Garden.forEachNeighbor(x, y, (nx, ny) => {
+      if (plots[ny][nx] === 'plant') {
         plants += 1;
       }
     });
@@ -245,36 +268,45 @@ export default class Garden {
     switch (plot.type) {
       case 'house':
         plot.sprite?.setFrame(plot.houseSegment);
-        break;
-      case 'dirt':
         this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
           if (!neighbor.isRevealed && neighbor.type !== 'plant') {
             this.revealPlot(nx, ny);
           }
         });
-        let isSurroundedByDirt = true;
-        this.forEachNeighborPlot(x, y, (neighbor) => {
-          if (!isSurroundedByDirt) {
-            return;
+        break;
+      case 'dirt':
+        {
+          this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
+            if (!neighbor.isRevealed && neighbor.type !== 'plant') {
+              this.revealPlot(nx, ny);
+            }
+          });
+          let isSurroundedByDirt = true;
+          this.forEachNeighborPlot(x, y, (neighbor) => {
+            if (!isSurroundedByDirt) {
+              return;
+            }
+            if (
+              !['dirt', 'edge'].includes(neighbor.type) ||
+              (neighbor.type === 'dirt' && neighbor.hasMound)
+            ) {
+              isSurroundedByDirt = false;
+            }
+          });
+          if (isSurroundedByDirt && !!Math.round(Math.random())) {
+            plot.hasMound = true;
+            plot.sprite?.setFrame(
+              Math.round(Math.random())
+                ? PLANT_TILES.DIRT_1
+                : PLANT_TILES.DIRT_2
+            );
+          } else {
+            plot.sprite?.destroy();
           }
-          if (
-            !['dirt', 'edge'].includes(neighbor.type) ||
-            (neighbor.type === 'dirt' && neighbor.hasMound)
-          ) {
-            isSurroundedByDirt = false;
-          }
-        });
-        if (isSurroundedByDirt && !!Math.round(Math.random())) {
-          plot.hasMound = true;
-          plot.sprite?.setFrame(
-            Math.round(Math.random()) ? PLANT_TILES.DIRT_1 : PLANT_TILES.DIRT_2
-          );
-        } else {
-          plot.sprite?.destroy();
         }
         break;
       case 'plant':
-        plot.sprite?.setFrame(plantColorToFrame(plot.plantColor));
+        plot.sprite?.setFrame(Garden.plantColorToFrame(plot.plantColor));
         break;
       case 'weed':
         switch (this.getWeedStrength(x, y)) {
@@ -299,41 +331,41 @@ export default class Garden {
       });
     });
   }
-}
 
-function forEachNeighbor(
-  x: number,
-  y: number,
-  callback: (x: number, y: number) => void
-) {
-  [-1, 0, 1].forEach((dx) => {
-    [-1, 0, 1].forEach((dy) => {
-      if (!(dx === 0 && dy === 0)) {
-        callback(x + dx, y + dy);
-      }
+  static forEachNeighbor(
+    x: number,
+    y: number,
+    callback: (x: number, y: number) => void
+  ) {
+    [-1, 0, 1].forEach((dx) => {
+      [-1, 0, 1].forEach((dy) => {
+        if (!(dx === 0 && dy === 0)) {
+          callback(x + dx, y + dy);
+        }
+      });
     });
-  });
-}
-
-function plantColorToFrame(color: PlantColor): PLANT_TILES {
-  switch (color) {
-    case 'blue':
-      return PLANT_TILES.PLANT_BLUE;
-    case 'purple':
-      return PLANT_TILES.PLANT_PURPLE;
-    default:
-      return PLANT_TILES.PLANT_ORANGE;
   }
-}
 
-function randomPlantColor(): PlantColor {
-  const num = Math.floor(Math.random() * 3);
-  switch (num) {
-    case 0:
-      return 'blue';
-    case 1:
-      return 'purple';
-    default:
-      return 'orange';
+  static plantColorToFrame(color: PlantColor): PLANT_TILES {
+    switch (color) {
+      case 'blue':
+        return PLANT_TILES.PLANT_BLUE;
+      case 'purple':
+        return PLANT_TILES.PLANT_PURPLE;
+      default:
+        return PLANT_TILES.PLANT_ORANGE;
+    }
+  }
+
+  static randomPlantColor(): PlantColor {
+    const num = Math.floor(Math.random() * 3);
+    switch (num) {
+      case 0:
+        return 'blue';
+      case 1:
+        return 'purple';
+      default:
+        return 'orange';
+    }
   }
 }

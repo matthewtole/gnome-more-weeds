@@ -8,7 +8,9 @@
     "build": "rollup --config rollup.config.dist.js",
     "watch": "rollup --watch --config rollup.config.dev.js",
     "prettier:fix": "prettier --write \"src/**/*.{js,ts}\"",
-    "prettier": "prettier --check \"src/**/*.{js,ts}\""
+    "prettier": "prettier --check \"src/**/*.{js,ts}\"",
+    "test:eslint": "eslint --ext .js,.ts .",
+    "test:jest": "jest"
   },
   "repository": {
     "type": "git",
@@ -24,6 +26,11 @@
   "devDependencies": {
     "@rollup/plugin-replace": "^2.3.0",
     "@types/jest": "^26.0.0",
+    "@typescript-eslint/eslint-plugin": "^3.2.0",
+    "@typescript-eslint/parser": "^3.2.0",
+    "eslint": "^7.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-jest": "^23.13.2",
     "jest": "^26.0.1",
     "phaser": "^3.22.0",
     "prettier": "^2.0.5",
