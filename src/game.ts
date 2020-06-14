@@ -23,39 +23,29 @@ export default class PlantGame extends Phaser.Scene {
     this.garden = new Garden(GARDEN_WIDTH, GARDEN_HEIGHT, 16);
   }
 
+  private loadSpritesheet(tag: string, filename: string) {
+    this.load.spritesheet(tag, `assets/${filename}`, {
+      frameWidth: TILE_SIZE,
+      frameHeight: TILE_SIZE,
+    });
+  }
+
   preload() {
-    this.load.spritesheet(ASSET_TAGS.TILES.BACKGROUND, 'assets/tiles32.png', {
-      frameWidth: TILE_SIZE,
-      frameHeight: TILE_SIZE,
-    });
-    this.load.spritesheet(ASSET_TAGS.TILES.PLANTS, 'assets/plants32.png', {
-      frameWidth: TILE_SIZE,
-      frameHeight: TILE_SIZE,
-    });
-    this.load.spritesheet(
+    this.loadSpritesheet(ASSET_TAGS.TILES.BACKGROUND, 'tiles32.png');
+    this.loadSpritesheet(ASSET_TAGS.TILES.PLANTS, 'plants32.png');
+    this.loadSpritesheet(
       ASSET_TAGS.SPRITESHEETS.WEED_1,
-      'assets/spritesheet-weed1.png',
-      {
-        frameWidth: TILE_SIZE,
-        frameHeight: TILE_SIZE,
-      }
+      'spritesheet-weed1.png'
     );
-    this.load.spritesheet(
+    this.loadSpritesheet(
       ASSET_TAGS.SPRITESHEETS.WEED_2,
-      'assets/spritesheet-weed2.png',
-      {
-        frameWidth: TILE_SIZE,
-        frameHeight: TILE_SIZE,
-      }
+      'spritesheet-weed2.png'
     );
-    this.load.spritesheet(
+    this.loadSpritesheet(
       ASSET_TAGS.SPRITESHEETS.WEED_3,
-      'assets/spritesheet-weed3.png',
-      {
-        frameWidth: TILE_SIZE,
-        frameHeight: TILE_SIZE,
-      }
+      'spritesheet-weed3.png'
     );
+    this.load.image('button', 'assets/button.png');
   }
 
   private createBackground() {
@@ -207,13 +197,13 @@ export default class PlantGame extends Phaser.Scene {
 
   createToolbarButton(mode: Mode, position: number, frame: number) {
     const button = this.add.sprite(
-      16 + 8 + 48 * position,
-      TILE_SIZE * GARDEN_HEIGHT + 16 + 8,
+      32 + 48 * position,
+      TILE_SIZE * GARDEN_HEIGHT + 24,
       ASSET_TAGS.TILES.PLANTS,
       frame
     );
     button
-      .setInteractive()
+      .setInteractive({ useHandCursor: true })
       .setData('type', 'button')
       .setData('onclick', (pointer: Phaser.Input.Pointer) => {
         this.toolButtons[this.mode].setAlpha(0.5);
@@ -224,6 +214,27 @@ export default class PlantGame extends Phaser.Scene {
     this.toolButtons[mode] = button;
   }
 
+  private onGnomeClick = (pointer: Phaser.Input.Pointer) => {
+    const text1 = this.add.text(50, 100, 'Hello, my name is Norman!', {
+      font: '16px Coming Soon',
+      fill: '#000',
+    });
+    text1.setDepth(1);
+    text1.setPosition(
+      GARDEN_WIDTH * TILE_SIZE - text1.width - 48,
+      GARDEN_HEIGHT * TILE_SIZE - text1.height
+    );
+
+    const bubble = this.add.rectangle(
+      text1.getBounds().left + text1.getBounds().width / 2,
+      text1.getBounds().top + text1.getBounds().height / 2 - 2,
+      text1.getBounds().width + 24,
+      text1.getBounds().height + 12,
+      0xffffff
+    );
+    bubble.setStrokeStyle(2, 0x00000);
+  };
+
   createToolbar() {
     this.add.rectangle(
       0,
@@ -233,10 +244,33 @@ export default class PlantGame extends Phaser.Scene {
       0x489551
     );
 
-    this.createToolbarButton('dig', 0, PLANT_TILES.TOOL_DIG);
-    this.createToolbarButton('rake', 1, PLANT_TILES.TOOL_RAKE);
-    this.createToolbarButton('mark', 2, PLANT_TILES.TOOL_MARK);
+    this.createToolbarButton('rake', 0, PLANT_TILES.TOOL_RAKE);
+    this.createToolbarButton('mark', 1, PLANT_TILES.TOOL_MARK);
+    this.createToolbarButton('dig', 2, PLANT_TILES.TOOL_DIG);
     this.toolButtons[this.mode].setAlpha(1);
+
+    const gnome = this.add.container(
+      TILE_SIZE * (GARDEN_WIDTH - 1) + 8,
+      TILE_SIZE * GARDEN_HEIGHT - 8
+    );
+    gnome.add(
+      this.add.sprite(
+        0,
+        TILE_SIZE,
+        ASSET_TAGS.TILES.PLANTS,
+        PLANT_TILES.GNOME_1
+      )
+    );
+    gnome.add(
+      this.add.sprite(0, 0, ASSET_TAGS.TILES.PLANTS, PLANT_TILES.GNOME_2)
+    );
+    gnome.setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(-16, -16, TILE_SIZE, TILE_SIZE * 2),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      useHandCursor: true,
+    });
+    gnome.setData('type', 'button');
+    gnome.setData('onclick', this.onGnomeClick);
   }
 
   create() {
@@ -253,7 +287,7 @@ const config = {
   type: Phaser.AUTO,
   backgroundColor: '#b06758',
   width: TILE_SIZE * GARDEN_WIDTH,
-  height: TILE_SIZE * GARDEN_HEIGHT + 64,
+  height: TILE_SIZE * GARDEN_HEIGHT + 48,
   scene: PlantGame,
 };
 

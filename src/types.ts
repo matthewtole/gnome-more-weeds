@@ -30,6 +30,14 @@ export const enum PLANT_TILES {
   HOUSE_3 = 22,
   HOUSE_4 = 25,
   TOOL_MARK = 26,
+  DEAD_FLOWER = 27,
+  DUG_UP_1 = 28,
+  DUG_UP_2 = 29,
+  _4 = 30,
+  _5 = 31,
+  _6 = 32,
+  GNOME_1 = 33,
+  GNOME_2 = 34,
 }
 
 export type Mode = 'dig' | 'rake' | 'mark';
