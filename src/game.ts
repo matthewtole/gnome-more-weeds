@@ -17,6 +17,7 @@ export default class PlantGame extends Phaser.Scene {
   private garden: Garden;
   private mode: Mode = 'rake';
   private toolButtons: { [mode: string]: Phaser.GameObjects.Sprite } = {};
+  private score?: Phaser.GameObjects.Text;
 
   constructor() {
     super('plantgame');
@@ -113,24 +114,26 @@ export default class PlantGame extends Phaser.Scene {
       ];
 
       if (plot.type !== 'edge') {
-        plot.sprite = this.add.sprite(
+        plot.sprite = this.add
+          .sprite(
+            plotPos(x),
+            plotPos(y),
+            ASSET_TAGS.TILES.PLANTS,
+            PLANT_TILES.LEAVES
+          )
+          .setInteractive()
+          .setData('type', 'plot')
+          .setData('pos', { x, y });
+      }
+
+      plot.marker = this.add
+        .sprite(
           plotPos(x),
           plotPos(y),
           ASSET_TAGS.TILES.PLANTS,
-          PLANT_TILES.LEAVES
-        );
-        plot.sprite?.setInteractive();
-        plot.sprite?.setData('type', 'plot');
-        plot.sprite?.setData('pos', { x, y });
-      }
-
-      plot.marker = this.add.sprite(
-        plotPos(x),
-        plotPos(y),
-        ASSET_TAGS.TILES.PLANTS,
-        PLANT_TILES.TAG
-      );
-      plot.marker?.setVisible(false);
+          PLANT_TILES.TAG
+        )
+        .setVisible(false);
     });
     this.garden.updateLeafEdges();
   }
@@ -161,7 +164,9 @@ export default class PlantGame extends Phaser.Scene {
           default:
           // Nothing yet
         }
-
+        this.score?.setText(
+          `${this.garden.foundFlowers()} ${this.garden.killedFlowers()} ${this.garden.hiddenFlowers()}`
+        );
         break;
       }
     }
@@ -225,7 +230,7 @@ export default class PlantGame extends Phaser.Scene {
     text1.setDepth(1);
     text1.setPosition(
       GARDEN_WIDTH * TILE_SIZE - text1.width - 48,
-      GARDEN_HEIGHT * TILE_SIZE - text1.height
+      GARDEN_HEIGHT * TILE_SIZE - text1.height + 8
     );
 
     const bubble = this.add.rectangle(
@@ -239,18 +244,28 @@ export default class PlantGame extends Phaser.Scene {
   };
 
   createToolbar() {
-    this.add.rectangle(
-      0,
-      TILE_SIZE * GARDEN_HEIGHT + 32,
-      TILE_SIZE * GARDEN_WIDTH * 2,
-      64,
-      0x489551
+    const toolbar = this.add.container(0, TILE_SIZE * GARDEN_HEIGHT + 32);
+    toolbar.add(
+      this.add.rectangle(
+        (TILE_SIZE * GARDEN_WIDTH) / 2,
+        0,
+        TILE_SIZE * GARDEN_WIDTH,
+        64,
+        0x489551
+      )
     );
 
     this.createToolbarButton('rake', 0, PLANT_TILES.TOOL_RAKE);
     this.createToolbarButton('mark', 1, PLANT_TILES.TOOL_MARK);
     this.createToolbarButton('dig', 2, PLANT_TILES.TOOL_DIG);
     this.toolButtons[this.mode].setAlpha(1);
+
+    this.score = this.add.text(
+      (TILE_SIZE * GARDEN_WIDTH) / 2,
+      TILE_SIZE * GARDEN_HEIGHT + 16,
+      '0 0 16',
+      { font: '16px Coming Soon', fill: '#fff' }
+    );
 
     const gnome = this.add.container(
       TILE_SIZE * (GARDEN_WIDTH - 1) + 8,

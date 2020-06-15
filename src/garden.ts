@@ -1,6 +1,6 @@
 import { PLANT_TILES, ASSET_TAGS } from './types';
 
-type PlantColor = 'orange' | 'purple' | 'blue';
+type PlantColor = 'yellow' | 'purple' | 'blue';
 type PlotType = 'weed' | 'plant' | 'dirt' | 'edge' | 'house';
 
 interface BasePlot {
@@ -21,6 +21,7 @@ interface WeedPlot extends BasePlot {
 interface PlantPlot extends BasePlot {
   type: 'plant';
   plantColor: PlantColor;
+  isDead?: boolean;
 }
 
 interface DirtPlot extends BasePlot {
@@ -216,23 +217,26 @@ export default class Garden {
         plot.weedStrength -= 1;
         if (plot.weedStrength <= 0) {
           plot.isDugUp = true;
-          plot.sprite?.destroy();
+          plot.sprite?.anims.stop();
+          plot.sprite?.setTexture(ASSET_TAGS.TILES.PLANTS);
+          plot.sprite?.setFrame(PLANT_TILES.DUG_UP_1);
           this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
             if (neighbor.type !== 'plant') {
               return;
             }
             let allWeedsDugUp = true;
             this.forEachNeighborPlot(nx, ny, (plantNeighbor) => {
-              if (
-                allWeedsDugUp &&
-                plantNeighbor.type === 'weed' &&
-                !plantNeighbor.isDugUp
-              ) {
+              if (plantNeighbor.type === 'weed' && !plantNeighbor.isDugUp) {
                 allWeedsDugUp = false;
               }
             });
             if (allWeedsDugUp) {
-              this.revealPlot(nx, ny);
+              neighbor.sprite?.setFrame(
+                Garden.plantColorToFrame(neighbor.plantColor)
+              );
+              neighbor.isDead = false;
+              neighbor.isRevealed = true;
+              this.updateLeafEdges();
             }
           });
         } else {
@@ -306,7 +310,8 @@ export default class Garden {
         }
         break;
       case 'plant':
-        plot.sprite?.setFrame(Garden.plantColorToFrame(plot.plantColor));
+        plot.sprite?.setFrame(PLANT_TILES.DEAD_FLOWER);
+        plot.isDead = true;
         break;
       case 'weed':
         switch (this.getWeedStrength(x, y)) {
@@ -353,8 +358,38 @@ export default class Garden {
       case 'purple':
         return PLANT_TILES.PLANT_PURPLE;
       default:
-        return PLANT_TILES.PLANT_ORANGE;
+        return PLANT_TILES.PLANT_YELLOW;
     }
+  }
+
+  public foundFlowers() {
+    let f = 0;
+    this.forEachPlot((x, y, plot) => {
+      if (plot.type === 'plant' && plot.isRevealed && !plot.isDead) {
+        f += 1;
+      }
+    });
+    return f;
+  }
+
+  public killedFlowers() {
+    let f = 0;
+    this.forEachPlot((x, y, plot) => {
+      if (plot.type === 'plant' && plot.isRevealed && plot.isDead) {
+        f += 1;
+      }
+    });
+    return f;
+  }
+
+  public hiddenFlowers() {
+    let f = 0;
+    this.forEachPlot((x, y, plot) => {
+      if (plot.type === 'plant' && !plot.isRevealed) {
+        f += 1;
+      }
+    });
+    return f;
   }
 
   static randomPlantColor(): PlantColor {
@@ -365,7 +400,7 @@ export default class Garden {
       case 1:
         return 'purple';
       default:
-        return 'orange';
+        return 'yellow';
     }
   }
 }

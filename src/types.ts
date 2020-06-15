@@ -6,7 +6,7 @@ export const enum PLANT_TILES {
   WEED_1 = 0,
   WEED_2 = 1,
   WEED_3 = 2,
-  PLANT_ORANGE = 3,
+  PLANT_YELLOW = 3,
   ROCK = 4,
   MUSHROOMS = 5,
   LEAVES = 6,
