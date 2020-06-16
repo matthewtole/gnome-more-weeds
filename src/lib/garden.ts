@@ -1,4 +1,4 @@
-import { PLANT_TILES, ASSET_TAGS } from '../types';
+import { PLANT_TILES, ASSETS } from '../types';
 
 type PlantColor = 'yellow' | 'purple' | 'blue';
 type PlotType = 'weed' | 'plant' | 'dirt' | 'edge' | 'house';
@@ -219,10 +219,13 @@ export default class Garden {
       case 'weed':
         plot.isDugUp = true;
         plot.sprite?.anims.stop();
-        plot.sprite?.setTexture(ASSET_TAGS.TILES.PLANTS);
+        plot.sprite?.setTexture(ASSETS.TILES.PLANTS);
         plot.sprite?.setFrame(PLANT_TILES.DUG_UP_1);
         this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
           if (neighbor.type !== 'plant') {
+            return;
+          }
+          if (neighbor.isDead) {
             return;
           }
           let allWeedsDugUp = true;
@@ -304,13 +307,13 @@ export default class Garden {
       case 'weed':
         switch (this.getWeedStrength(x, y)) {
           case 1:
-            plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_1);
+            plot.sprite?.play(ASSETS.ANIMATIONS.WEED_1);
             break;
           case 2:
-            plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_2);
+            plot.sprite?.play(ASSETS.ANIMATIONS.WEED_2);
             break;
           default:
-            plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_3);
+            plot.sprite?.play(ASSETS.ANIMATIONS.WEED_3);
         }
         break;
     }

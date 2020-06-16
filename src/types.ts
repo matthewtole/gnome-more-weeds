@@ -42,7 +42,7 @@ export const enum PLANT_TILES {
 
 export type Mode = 'dig' | 'rake' | 'mark';
 
-export const ASSET_TAGS = {
+export const ASSETS = {
   TILES: {
     BACKGROUND: 'tiles/background',
     PLANTS: 'tiles/plants',

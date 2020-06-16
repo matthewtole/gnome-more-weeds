@@ -6,7 +6,7 @@ import {
   TILE_SIZE,
   GARDEN_WIDTH,
   GARDEN_HEIGHT,
-  ASSET_TAGS,
+  ASSETS,
   Mode,
 } from '../types';
 
@@ -19,6 +19,9 @@ export class GardenScene extends SceneBase {
   private mode: Mode = 'rake';
   private toolButtons: { [mode: string]: Phaser.GameObjects.Sprite } = {};
   private score?: Phaser.GameObjects.Text;
+
+  private messageText?: Phaser.GameObjects.Text;
+  private messageBubble?: Phaser.GameObjects.Rectangle;
 
   constructor() {
     super(GardenScene.name);
@@ -34,7 +37,7 @@ export class GardenScene extends SceneBase {
       this.add.sprite(
         plotPos(t),
         plotPos(0),
-        ASSET_TAGS.TILES.BACKGROUND,
+        ASSETS.TILES.BACKGROUND,
         t === 0 ? 89 : t === GARDEN_WIDTH - 1 ? 91 : 90
       );
 
@@ -42,20 +45,20 @@ export class GardenScene extends SceneBase {
       this.add.sprite(
         plotPos(t),
         plotPos(GARDEN_HEIGHT - 1),
-        ASSET_TAGS.TILES.BACKGROUND,
+        ASSETS.TILES.BACKGROUND,
         t === 0 ? 135 : t === GARDEN_WIDTH - 1 ? 137 : 136
       );
     }
 
     for (let t = 1; t < GARDEN_HEIGHT - 1; t += 1) {
       // LEFT EDGE
-      this.add.sprite(plotPos(0), plotPos(t), ASSET_TAGS.TILES.BACKGROUND, 112);
+      this.add.sprite(plotPos(0), plotPos(t), ASSETS.TILES.BACKGROUND, 112);
 
       // RIGHT EDGE
       this.add.sprite(
         plotPos(GARDEN_WIDTH - 1),
         plotPos(t),
-        ASSET_TAGS.TILES.BACKGROUND,
+        ASSETS.TILES.BACKGROUND,
         114
       );
     }
@@ -69,7 +72,7 @@ export class GardenScene extends SceneBase {
         PLANT_TILES.LEAF_EDGE_RIGHT,
         PLANT_TILES.LEAF_EDGE_UP,
       ].map((frame) =>
-        this.add.sprite(plotPos(x), plotPos(y), ASSET_TAGS.TILES.PLANTS, frame)
+        this.add.sprite(plotPos(x), plotPos(y), ASSETS.TILES.PLANTS, frame)
       );
 
       if (plot.type !== 'edge') {
@@ -77,7 +80,7 @@ export class GardenScene extends SceneBase {
           .sprite(
             plotPos(x),
             plotPos(y),
-            ASSET_TAGS.TILES.PLANTS,
+            ASSETS.TILES.PLANTS,
             PLANT_TILES.LEAVES
           )
           .setInteractive()
@@ -86,12 +89,7 @@ export class GardenScene extends SceneBase {
       }
 
       plot.marker = this.add
-        .sprite(
-          plotPos(x),
-          plotPos(y),
-          ASSET_TAGS.TILES.PLANTS,
-          PLANT_TILES.TAG
-        )
+        .sprite(plotPos(x), plotPos(y), ASSETS.TILES.PLANTS, PLANT_TILES.TAG)
         .setVisible(false);
     });
     this.garden.updateLeafEdges();
@@ -101,6 +99,9 @@ export class GardenScene extends SceneBase {
     pointer: Phaser.Input.Pointer,
     gameObject: Phaser.GameObjects.GameObject
   ) {
+    if (!pointer.primaryDown) {
+      return;
+    }
     switch (gameObject.getData('type')) {
       case 'button':
         gameObject.getData('onclick')(pointer);
@@ -133,28 +134,22 @@ export class GardenScene extends SceneBase {
 
   private createAnimations() {
     this.anims.create({
-      key: ASSET_TAGS.ANIMATIONS.WEED_1,
-      frames: this.anims.generateFrameNumbers(
-        ASSET_TAGS.SPRITESHEETS.WEED_1,
-        {}
-      ),
+      key: ASSETS.ANIMATIONS.WEED_1,
+      frames: this.anims.generateFrameNumbers(ASSETS.SPRITESHEETS.WEED_1, {}),
       frameRate: 2,
       repeat: -1,
     });
 
     this.anims.create({
-      key: ASSET_TAGS.ANIMATIONS.WEED_2,
-      frames: this.anims.generateFrameNumbers(
-        ASSET_TAGS.SPRITESHEETS.WEED_2,
-        {}
-      ),
+      key: ASSETS.ANIMATIONS.WEED_2,
+      frames: this.anims.generateFrameNumbers(ASSETS.SPRITESHEETS.WEED_2, {}),
       frameRate: 2,
       repeat: -1,
     });
 
     this.anims.create({
-      key: ASSET_TAGS.ANIMATIONS.WEED_3,
-      frames: this.anims.generateFrameNumbers(ASSET_TAGS.SPRITESHEETS.WEED_3, {
+      key: ASSETS.ANIMATIONS.WEED_3,
+      frames: this.anims.generateFrameNumbers(ASSETS.SPRITESHEETS.WEED_3, {
         end: 5,
       }),
       frameRate: 2,
@@ -166,7 +161,7 @@ export class GardenScene extends SceneBase {
     const button = this.add.sprite(
       32 + 48 * position,
       TILE_SIZE * GARDEN_HEIGHT + 24,
-      ASSET_TAGS.TILES.PLANTS,
+      ASSETS.TILES.PLANTS,
       frame
     );
     button
@@ -183,25 +178,50 @@ export class GardenScene extends SceneBase {
     this.toolButtons[mode] = button;
   }
 
+  private hideMessage() {
+    if (this.messageBubble) {
+      this.messageBubble.destroy();
+      delete this.messageBubble;
+    }
+    if (this.messageText) {
+      this.messageText.destroy();
+      delete this.messageText;
+    }
+  }
+
   private onGnomeClick = () => {
-    const text1 = this.add.text(50, 100, 'Hello, my name is Norman!', {
-      font: '16px Coming Soon',
-      fill: '#000',
-    });
-    text1.setDepth(1);
-    text1.setPosition(
-      GARDEN_WIDTH * TILE_SIZE - text1.width - 48,
-      GARDEN_HEIGHT * TILE_SIZE - text1.height + 8
+    this.hideMessage();
+    this.messageText = this.add.text(
+      50,
+      100,
+      "Hi friend, I'm Norma, welcome to my garden",
+      {
+        font: '16px Coming Soon',
+        fill: '#000',
+      }
+    );
+    this.messageText.setDepth(1);
+    this.messageText.setPosition(
+      GARDEN_WIDTH * TILE_SIZE - this.messageText.width - 48,
+      GARDEN_HEIGHT * TILE_SIZE - this.messageText.height + 8
     );
 
-    const bubble = this.add.rectangle(
-      text1.getBounds().left + text1.getBounds().width / 2,
-      text1.getBounds().top + text1.getBounds().height / 2 - 2,
-      text1.getBounds().width + 24,
-      text1.getBounds().height + 12,
+    this.messageBubble = this.add.rectangle(
+      this.messageText.getBounds().left +
+        this.messageText.getBounds().width / 2,
+      this.messageText.getBounds().top +
+        this.messageText.getBounds().height / 2 -
+        2,
+      this.messageText.getBounds().width + 24,
+      this.messageText.getBounds().height + 12,
       0xffffff
     );
-    bubble.setStrokeStyle(2, 0x00000);
+    this.messageBubble.setStrokeStyle(2, 0x00000);
+    this.messageBubble.setInteractive();
+    this.messageBubble.setData('type', 'button');
+    this.messageBubble.setData('onclick', () => {
+      this.hideMessage();
+    });
   };
 
   createToolbar() {
@@ -233,16 +253,9 @@ export class GardenScene extends SceneBase {
       TILE_SIZE * GARDEN_HEIGHT - 8
     );
     gnome.add(
-      this.add.sprite(
-        0,
-        TILE_SIZE,
-        ASSET_TAGS.TILES.PLANTS,
-        PLANT_TILES.GNOME_1
-      )
+      this.add.sprite(0, TILE_SIZE, ASSETS.TILES.PLANTS, PLANT_TILES.GNOME_1)
     );
-    gnome.add(
-      this.add.sprite(0, 0, ASSET_TAGS.TILES.PLANTS, PLANT_TILES.GNOME_2)
-    );
+    gnome.add(this.add.sprite(0, 0, ASSETS.TILES.PLANTS, PLANT_TILES.GNOME_2));
     gnome.setInteractive({
       hitArea: new Phaser.Geom.Rectangle(-16, -16, TILE_SIZE, TILE_SIZE * 2),
       hitAreaCallback: Phaser.Geom.Rectangle.Contains,
