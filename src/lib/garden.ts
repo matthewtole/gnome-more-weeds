@@ -1,4 +1,4 @@
-import { PLANT_TILES, ASSET_TAGS } from './types';
+import { PLANT_TILES, ASSET_TAGS } from '../types';
 
 type PlantColor = 'yellow' | 'purple' | 'blue';
 type PlotType = 'weed' | 'plant' | 'dirt' | 'edge' | 'house';
