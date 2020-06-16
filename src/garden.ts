@@ -212,46 +212,34 @@ export default class Garden {
     if (plot.isDugUp) {
       return;
     }
+    if (plot.isMarked) {
+      return;
+    }
     switch (plot.type) {
       case 'weed':
-        plot.weedStrength -= 1;
-        if (plot.weedStrength <= 0) {
-          plot.isDugUp = true;
-          plot.sprite?.anims.stop();
-          plot.sprite?.setTexture(ASSET_TAGS.TILES.PLANTS);
-          plot.sprite?.setFrame(PLANT_TILES.DUG_UP_1);
-          this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
-            if (neighbor.type !== 'plant') {
-              return;
-            }
-            let allWeedsDugUp = true;
-            this.forEachNeighborPlot(nx, ny, (plantNeighbor) => {
-              if (plantNeighbor.type === 'weed' && !plantNeighbor.isDugUp) {
-                allWeedsDugUp = false;
-              }
-            });
-            if (allWeedsDugUp) {
-              neighbor.sprite?.setFrame(
-                Garden.plantColorToFrame(neighbor.plantColor)
-              );
-              neighbor.isDead = false;
-              neighbor.isRevealed = true;
-              this.updateLeafEdges();
+        plot.isDugUp = true;
+        plot.sprite?.anims.stop();
+        plot.sprite?.setTexture(ASSET_TAGS.TILES.PLANTS);
+        plot.sprite?.setFrame(PLANT_TILES.DUG_UP_1);
+        this.forEachNeighborPlot(x, y, (neighbor, nx, ny) => {
+          if (neighbor.type !== 'plant') {
+            return;
+          }
+          let allWeedsDugUp = true;
+          this.forEachNeighborPlot(nx, ny, (plantNeighbor) => {
+            if (plantNeighbor.type === 'weed' && !plantNeighbor.isDugUp) {
+              allWeedsDugUp = false;
             }
           });
-        } else {
-          switch (plot.weedStrength) {
-            case 1:
-              plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_1);
-              break;
-            case 2:
-              plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_2);
-              break;
-            default:
-              plot.sprite?.play(ASSET_TAGS.ANIMATIONS.WEED_3);
+          if (allWeedsDugUp) {
+            neighbor.sprite?.setFrame(
+              Garden.plantColorToFrame(neighbor.plantColor)
+            );
+            neighbor.isDead = false;
+            neighbor.isRevealed = true;
+            this.updateLeafEdges();
           }
-          break;
-        }
+        });
         break;
       case 'plant':
         plot.isDugUp = true;
@@ -375,7 +363,7 @@ export default class Garden {
   public killedFlowers() {
     let f = 0;
     this.forEachPlot((x, y, plot) => {
-      if (plot.type === 'plant' && plot.isRevealed && plot.isDead) {
+      if (plot.type === 'plant' && plot.isDead) {
         f += 1;
       }
     });

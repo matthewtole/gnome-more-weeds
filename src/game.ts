@@ -48,7 +48,7 @@ export default class PlantGame extends Phaser.Scene {
       ASSET_TAGS.SPRITESHEETS.WEED_3,
       'spritesheet-weed3.png'
     );
-    this.load.image('button', 'assets/button.png');
+    this.load.audio('click', ['assets/sfx/switch10.wav']);
   }
 
   private createBackground() {
@@ -87,31 +87,13 @@ export default class PlantGame extends Phaser.Scene {
   private createGarden() {
     this.garden.forEachPlot((x, y, plot) => {
       plot.leafEdges = [
-        this.add.sprite(
-          plotPos(x),
-          plotPos(y),
-          ASSET_TAGS.TILES.PLANTS,
-          PLANT_TILES.LEAF_EDGE_DOWN
-        ),
-        this.add.sprite(
-          plotPos(x),
-          plotPos(y),
-          ASSET_TAGS.TILES.PLANTS,
-          PLANT_TILES.LEAF_EDGE_LEFT
-        ),
-        this.add.sprite(
-          plotPos(x),
-          plotPos(y),
-          ASSET_TAGS.TILES.PLANTS,
-          PLANT_TILES.LEAF_EDGE_RIGHT
-        ),
-        this.add.sprite(
-          plotPos(x),
-          plotPos(y),
-          ASSET_TAGS.TILES.PLANTS,
-          PLANT_TILES.LEAF_EDGE_UP
-        ),
-      ];
+        PLANT_TILES.LEAF_EDGE_DOWN,
+        PLANT_TILES.LEAF_EDGE_LEFT,
+        PLANT_TILES.LEAF_EDGE_RIGHT,
+        PLANT_TILES.LEAF_EDGE_UP,
+      ].map((frame) =>
+        this.add.sprite(plotPos(x), plotPos(y), ASSET_TAGS.TILES.PLANTS, frame)
+      );
 
       if (plot.type !== 'edge') {
         plot.sprite = this.add
@@ -214,6 +196,8 @@ export default class PlantGame extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .setData('type', 'button')
       .setData('onclick', () => {
+        this.sound.play('click');
+
         this.toolButtons[this.mode].setAlpha(0.5);
         this.mode = mode;
         this.toolButtons[this.mode].setAlpha(1);
