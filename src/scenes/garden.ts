@@ -18,7 +18,11 @@ export class GardenScene extends SceneBase {
   private garden: Garden;
   private mode: Mode = 'rake';
   private toolButtons: { [mode: string]: Phaser.GameObjects.Sprite } = {};
-  private score?: Phaser.GameObjects.Text;
+  private scores: {
+    dead?: Phaser.GameObjects.Text;
+    found?: Phaser.GameObjects.Text;
+    hidden?: Phaser.GameObjects.Text;
+  };
 
   private messageText?: Phaser.GameObjects.Text;
   private messageBubble?: Phaser.GameObjects.Rectangle;
@@ -26,6 +30,7 @@ export class GardenScene extends SceneBase {
   constructor() {
     super(GardenScene.name);
 
+    this.scores = {};
     this.garden = new Garden(
       Garden.generateLayout(GARDEN_WIDTH, GARDEN_HEIGHT, 16)
     );
@@ -124,9 +129,9 @@ export class GardenScene extends SceneBase {
           default:
           // Nothing yet
         }
-        this.score?.setText(
-          `${this.garden.foundFlowers()} ${this.garden.killedFlowers()} ${this.garden.hiddenFlowers()}`
-        );
+        this.scores.found?.setText(this.garden.foundFlowers().toString());
+        this.scores.dead?.setText(this.garden.killedFlowers().toString());
+        this.scores.hidden?.setText(this.garden.hiddenFlowers().toString());
         break;
       }
     }
@@ -241,11 +246,35 @@ export class GardenScene extends SceneBase {
     this.createToolbarButton('dig', 2, PLANT_TILES.TOOL_DIG);
     this.toolButtons[this.mode].setAlpha(1);
 
-    this.score = this.add.text(
-      (TILE_SIZE * GARDEN_WIDTH) / 2,
-      TILE_SIZE * GARDEN_HEIGHT + 16,
-      '0 0 16',
-      { font: '16px Coming Soon', fill: '#fff' }
+    const scoreBox = this.add.container(
+      this.gameWidth - 64 - 32 * 7,
+      TILE_SIZE * GARDEN_HEIGHT + 32 - 8
+    );
+    this.scores.found = this.add.text(0, -8, '0', {
+      font: '16px Coming Soon',
+      fill: '#fff',
+    });
+    scoreBox.add(this.scores.found);
+    scoreBox.add(
+      this.add.sprite(32, 0, ASSETS.TILES.PLANTS, PLANT_TILES.PLANT_YELLOW)
+    );
+
+    this.scores.dead = this.add.text(64, -8, '0', {
+      font: '16px Coming Soon',
+      fill: '#fff',
+    });
+    scoreBox.add(this.scores.dead);
+    scoreBox.add(
+      this.add.sprite(96, 0, ASSETS.TILES.PLANTS, PLANT_TILES.DEAD_FLOWER)
+    );
+
+    this.scores.hidden = this.add.text(128, -8, '16', {
+      font: '16px Coming Soon',
+      fill: '#fff',
+    });
+    scoreBox.add(this.scores.hidden);
+    scoreBox.add(
+      this.add.sprite(160, 0, ASSETS.TILES.PLANTS, PLANT_TILES.WEED_3)
     );
 
     const gnome = this.add.container(
