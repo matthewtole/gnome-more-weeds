@@ -9,7 +9,7 @@
     "watch": "rollup --watch --config rollup.config.dev.js",
     "prettier:fix": "prettier --write \"src/**/*.{js,ts}\"",
     "prettier": "prettier --check \"src/**/*.{js,ts}\"",
-    "test:eslint": "eslint --ext .js,.ts .",
+    "test:eslint": "eslint --ext .js,.ts",
     "test:jest": "jest"
   },
   "repository": {

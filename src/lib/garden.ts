@@ -245,6 +245,9 @@ export default class Garden {
         });
         break;
       case 'plant':
+        if (plot.isDead) {
+          return;
+        }
         plot.isDugUp = true;
         plot.sprite?.destroy();
         break;
@@ -254,9 +257,6 @@ export default class Garden {
   revealPlot(x: number, y: number) {
     const plot = this.getPlot(x, y);
     if (plot.isRevealed) {
-      return;
-    }
-    if (plot.isMarked) {
       return;
     }
     plot.isRevealed = true;
@@ -301,8 +301,26 @@ export default class Garden {
         }
         break;
       case 'plant':
-        plot.sprite?.setFrame(PLANT_TILES.DEAD_FLOWER);
-        plot.isDead = true;
+        if (plot.isMarked) {
+          let isFullyWeeded = true;
+          this.forEachNeighborPlot(x, y, (neighbor) => {
+            if (neighbor.type === 'weed' && !neighbor.isDugUp) {
+              isFullyWeeded = false;
+            }
+          });
+          if (isFullyWeeded) {
+            plot.sprite?.setFrame(Garden.plantColorToFrame(plot.plantColor));
+            plot.isDead = false;
+            plot.isRevealed = true;
+          } else {
+            plot.sprite?.setFrame(PLANT_TILES.WEED_3);
+            plot.isRevealed = true;
+            plot.isDead = false;
+          }
+        } else {
+          plot.sprite?.setFrame(PLANT_TILES.DEAD_FLOWER);
+          plot.isDead = true;
+        }
         break;
       case 'weed':
         switch (this.getWeedStrength(x, y)) {
