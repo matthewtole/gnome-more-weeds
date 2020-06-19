@@ -3,9 +3,9 @@ import { GardenScene } from './garden';
 import { TILE_SIZE, ASSETS } from '../types';
 
 // @ts-ignore
-import assets from '../assets/*.png';
+import assets from '../../assets/*.png';
 // @ts-ignore
-import sfx from '../assets/sfx/*.wav';
+import sfx from '../../assets/sfx/*.wav';
 
 export class Preloader extends SceneBase {
   private allAssetsLoaded = true;
